@@ -55,6 +55,13 @@ const Root: FC = () => {
   `;
   const GET_CHANNELS = gql`
   query getChannels($skipCycle: Int!) {
+    accounts(first: 1000, where:{isActive: true}) {
+      id
+      publicKey
+      balance
+      openChannelsCount
+      isActive
+    }
     channels(first: 1000, skip: $skipCycle, where: {status: OPEN}) {
       id
       source {
