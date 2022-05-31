@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { Bytes, ethers } from "ethers";
 
 export interface NodeData {
   key: string;
@@ -21,12 +21,50 @@ export interface Tag {
   key: string;
   image: string;
 }
-
+/*
 export interface Dataset {
   nodes: NodeData[];
   edges: [string, NodeWithStats][];
   clusters: Cluster[];
   tags: Tag[];
+}
+*/
+
+export interface Dataset {
+  nodes: Accounts[];
+  edges: Channels[];
+}
+
+export interface Accounts {
+  id: string
+  publicKey: string
+  balance: Number
+  openChannelsCount: Number
+  isActive: boolean
+}
+
+export interface Channels {
+  id: string
+  source: {
+    id: string
+  }
+  destination: {
+    id: string
+  }
+  balance: Number
+  commitment: Bytes
+  channelEpoch: Number
+  ticketEpoch: Number
+  ticketIndex: Number
+  status: Number
+  commitmentHistory: Bytes[]
+}
+
+export interface ApolloQuery {
+  accounts: Accounts[]
+  channels: Channels[]
+  channel2: Channels[]
+  channel3: Channels[]
 }
 
 export interface FiltersState {

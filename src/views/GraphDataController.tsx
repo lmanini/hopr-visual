@@ -1,8 +1,10 @@
 import { useSigma } from "react-sigma-v2";
 import { FC, useEffect } from "react";
 import { keyBy, omit } from "lodash";
+import { circular } from 'graphology-layout';
 
-import { Dataset, FiltersState } from "../types";
+import { Cluster, Dataset, FiltersState } from "../types";
+import forceAtlas2 from "graphology-layout-forceatlas2";
 
 const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ dataset, filters, children }) => {
   const sigma = useSigma();
@@ -14,33 +16,60 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ 
   useEffect(() => {
     if (!graph || !dataset) return;
 
-    const clusters = keyBy(dataset.clusters, "key");
-    const tags = keyBy(dataset.tags, "key");
+    let clustersA = [
+      {
+        "key": "1",
+        "color": "#5f83cc",
+        "clusterLabel": "Nodes"
+      }
+    ]
+    let tagsA = [
+      {
+        "key": "nodes",
+        "image": "technology.svg"
+      }
+    ]
+
+    const clusters = keyBy(clustersA, "key");
+    const tags = keyBy(tagsA, "key");
 
     dataset.nodes.forEach((node) =>
-      graph.addNode(node.key, {
+      graph.addNode(node.id, {
         ...node,
-        ...omit(clusters[node.cluster], "key"),
-        image: `${process.env.PUBLIC_URL}/images/${tags[node.tag].image}`,
+        label: node.id,
+        URL: "https://blockscout.com/xdai/mainnet/address/" + node.id,
+        score: node.balance,
+        cluster: "1",
+        tag: "nodes",
+        ...omit(clusters["1"], "key"),
       }),
     );
-    dataset.edges.forEach(([source, target]) => graph.addEdge(source, target.node, { size: 1, label: target.stats }));
+    dataset.edges.forEach((channel) => graph.addEdge(channel.source.id, channel.destination.id, { size: 1, label: channel.balance }));
 
     // Use degrees as node sizes:
     const scores = graph.nodes().map((node) => graph.getNodeAttribute(node, "score"));
     const minDegree = Math.min(...scores);
     const maxDegree = Math.max(...scores);
     const MIN_NODE_SIZE = 3;
-    const MAX_NODE_SIZE = 30;
-    graph.forEachNode((node) =>
+    const MAX_NODE_SIZE = 10;
+    let i = 0
+    graph.forEachNode((node) => {
       graph.setNodeAttribute(
         node,
         "size",
         ((graph.getNodeAttribute(node, "score") - minDegree) / (maxDegree - minDegree)) *
-          (MAX_NODE_SIZE - MIN_NODE_SIZE) +
-          MIN_NODE_SIZE,
-      ),
+        (MAX_NODE_SIZE - MIN_NODE_SIZE) +
+        MIN_NODE_SIZE,
+      );
+      //graph.setNodeAttribute(node, 'x', 0);
+      //graph.setNodeAttribute(node, 'y', i);
+      //i++;
+    }
     );
+    console.log("graph: ", graph)
+    circular.assign(graph);
+    const settings = forceAtlas2.inferSettings(graph);
+    forceAtlas2.assign(graph, { settings, iterations: 50 });
 
     return () => graph.clear();
   }, [graph, dataset]);
@@ -48,11 +77,13 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ 
   /**
    * Apply filters to graphology:
    */
-  useEffect(() => {
+  useEffect(() => {/*
     const { clusters, tags } = filters;
-    graph.forEachNode((node, { cluster, tag }) =>
-      graph.setNodeAttribute(node, "hidden", !clusters[cluster] || !tags[tag]),
-    );
+    console.log("Filter state: ", filters)
+    graph.forEachNode((node, { cluster, tag }) => {
+      graph.setNodeAttribute(node, "hidden", !clusters[cluster] || !tags[tag])
+    }
+    );*/
   }, [graph, filters]);
 
   return <>{children}</>;

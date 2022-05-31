@@ -77,13 +77,12 @@ const ClustersPanel: FC<{
             <li
               className="caption-row"
               key={cluster.key}
-              title={`${nodesCount} page${nodesCount > 1 ? "s" : ""}${
-                visibleNodesCount !== nodesCount ? ` (only ${visibleNodesCount} visible)` : ""
-              }`}
+              title={`${nodesCount} page${nodesCount > 1 ? "s" : ""}${visibleNodesCount !== nodesCount ? ` (only ${visibleNodesCount} visible)` : ""
+                }`}
             >
               <input
                 type="checkbox"
-                checked={filters.clusters[cluster.key] || false}
+                checked={filters.clusters[cluster.key] || true}
                 onChange={() => toggleCluster(cluster.key)}
                 id={`cluster-${cluster.key}`}
               />
