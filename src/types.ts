@@ -60,11 +60,11 @@ export interface Channels {
   commitmentHistory: Bytes[]
 }
 
-export interface ApolloQuery {
+export interface ApolloAccountQuery {
   accounts: Accounts[]
+}
+export interface ApolloChannelQuery {
   channels: Channels[]
-  channel2: Channels[]
-  channel3: Channels[]
 }
 
 export interface FiltersState {

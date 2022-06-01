@@ -9,13 +9,13 @@ import GraphSettingsController from "./GraphSettingsController";
 import GraphEventsController from "./GraphEventsController";
 import GraphDataController from "./GraphDataController";
 import DescriptionPanel from "./DescriptionPanel";
-import { ApolloQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag } from "../types";
+import { ApolloAccountQuery, ApolloChannelQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag } from "../types";
 import ClustersPanel from "./ClustersPanel";
 import SearchField from "./SearchField";
 import drawLabel from "../canvas-utils";
 import GraphTitle from "./GraphTitle";
 import TagsPanel from "./TagsPanel";
-import { datasetBuilder } from "../utils/dataset-utils"
+import { datasetBuilderAccount, datasetBuilderChannel } from "../utils/dataset-utils"
 
 import "react-sigma-v2/lib/react-sigma-v2.css";
 import { GrClose } from "react-icons/gr";
@@ -55,13 +55,6 @@ const Root: FC = () => {
   `;
   const GET_CHANNELS = gql`
   query getChannels($skipCycle: Int!) {
-    accounts(first: 1000, where:{isActive: true}) {
-      id
-      publicKey
-      balance
-      openChannelsCount
-      isActive
-    }
     channels(first: 1000, skip: $skipCycle, where: {status: OPEN}) {
       id
       source {
@@ -80,29 +73,60 @@ const Root: FC = () => {
     }
   }
 `;
-  const [queryApollo, { loading, error, data }] = useLazyQuery<ApolloQuery>(GET_CHANNELS, { client, pollInterval: 5000 });
+
+  async function runQuery() {
+
+    console.log("Loading data...")
+
+    const a = client.query<ApolloAccountQuery>({ query: GET_ACCOUNTS, });
+    const b = client.query<ApolloChannelQuery>({ query: GET_CHANNELS, variables: { skipCycle: 0 } });
+    const c = client.query<ApolloChannelQuery>({ query: GET_CHANNELS, variables: { skipCycle: 1000 } });
+    const d = client.query<ApolloChannelQuery>({ query: GET_CHANNELS, variables: { skipCycle: 2000 } });
+
+    try {
+      const res = await Promise.all([Promise.all([a]), Promise.all([b, c, d])])
+
+      let dataset: Dataset = {
+        nodes: [],
+        edges: []
+      }
+
+      for (let i = 0; i < res[0].length; i++) {
+        dataset = datasetBuilderAccount(res[0][i].data, dataset)
+      }
+
+      for (let i = 0; i < res[1].length; i++) {
+        dataset = datasetBuilderChannel(res[1][i].data as ApolloChannelQuery, dataset)
+      }
+
+      setDataset(dataset)
+      requestAnimationFrame(() => setDataReady(true));
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   useEffect(() => {
 
-    queryApollo({ variables: { skipCycle: 2000 } })
+    runQuery()
 
-    if (loading) {
-      console.log("loading...")
-      return
-    }
+    // if (loading) {
+    //   console.log("loading...")
+    //   return
+    // }
 
-    if (error) {
-      console.log("Error: ", error)
-      return;
-    }
+    // if (error) {
+    //   console.log("Error: ", error)
+    //   return;
+    // }
 
-    if (data) {
-      console.log("Data: ", data);
-      let dataset: Dataset = datasetBuilder(data)
-      setDataset(dataset)
-      requestAnimationFrame(() => setDataReady(true));
-    }
-  }, [loading])
+    // if (data) {
+    //   console.log("Data: ", data);
+    //   let dataset: Dataset = datasetBuilder(data)
+    //   setDataset(dataset)
+    //   requestAnimationFrame(() => setDataReady(true));
+    // }
+  }, [])
 
   if (!dataset) return null;
 

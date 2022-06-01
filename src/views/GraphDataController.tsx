@@ -1,7 +1,7 @@
 import { useSigma } from "react-sigma-v2";
 import { FC, useEffect } from "react";
 import { keyBy, omit } from "lodash";
-import { circular } from 'graphology-layout';
+import { circular, random } from 'graphology-layout';
 
 import { Cluster, Dataset, FiltersState } from "../types";
 import forceAtlas2 from "graphology-layout-forceatlas2";
@@ -67,9 +67,9 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ 
     }
     );
     console.log("graph: ", graph)
-    circular.assign(graph);
+    random.assign(graph);
     const settings = forceAtlas2.inferSettings(graph);
-    forceAtlas2.assign(graph, { settings, iterations: 50 });
+    forceAtlas2.assign(graph, { settings, iterations: 200 });
 
     return () => graph.clear();
   }, [graph, dataset]);

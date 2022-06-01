@@ -13,6 +13,7 @@
     "graphology": "^0.23.2",
     "graphology-layout": "^0.6.0",
     "graphology-layout-forceatlas2": "^0.8.2",
+    "graphology-layout-noverlap": "^0.4.2",
     "graphology-types": "^0.23.0",
     "graphql": "^16.5.0",
     "jest-haste-map": "^27.5.1",
