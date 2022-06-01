@@ -96,7 +96,7 @@ const Root: FC = () => {
       }
 
       for (let i = 0; i < res[1].length; i++) {
-        dataset = datasetBuilderChannel(res[1][i].data as ApolloChannelQuery, dataset)
+        dataset = datasetBuilderChannel(res[1][i].data, dataset)
       }
 
       setDataset(dataset)
@@ -182,7 +182,7 @@ const Root: FC = () => {
                 <button
                   type="button"
                   className="ico hide-contents"
-                  onClick={() => setShowContents(true)}
+                  onClick={() => setShowContents(false)}
                   title="Show caption and description"
                 >
                   <GrClose />
@@ -192,8 +192,8 @@ const Root: FC = () => {
 
               <div className="panels">
                 <SearchField filters={filtersState} />
-                {/*<DescriptionPanel />
-                <ClustersPanel
+                <DescriptionPanel />
+                {/*<ClustersPanel
                   clusters={clusters}
                   filters={filtersState}
                   setClusters={(clusters) =>
