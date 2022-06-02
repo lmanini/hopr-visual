@@ -3,12 +3,17 @@ import { FC, useEffect } from "react";
 import { keyBy, omit } from "lodash";
 import { circular, random } from 'graphology-layout';
 
-import { Cluster, Dataset, FiltersState } from "../types";
+import { Cluster, Dataset, FiltersState, VisualMode } from "../types";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 
-const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ dataset, filters, children }) => {
+const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState, refresh: boolean }> = ({ dataset, filters, children, refresh }) => {
   const sigma = useSigma();
   const graph = sigma.getGraph();
+
+  useEffect(() => {
+    //console.log("Sigma refreshing")
+    //sigma.refresh()
+  }, [refresh])
 
   /**
    * Feed graphology with the new dataset:
@@ -32,6 +37,8 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ 
 
     const clusters = keyBy(clustersA, "key");
     const tags = keyBy(tagsA, "key");
+
+    graph.clear()
 
     dataset.nodes.forEach((node) =>
       graph.addNode(node.id, {

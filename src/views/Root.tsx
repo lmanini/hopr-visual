@@ -22,6 +22,7 @@ import { GrClose, GrNetwork } from "react-icons/gr";
 import { BiRadioCircleMarked, BiBookContent, BiNetworkChart } from "react-icons/bi";
 import { BsArrowsFullscreen, BsFullscreenExit, BsZoomIn, BsZoomOut } from "react-icons/bs";
 import { ethers } from "ethers";
+import EndpointField from "./EndpointField";
 
 const APIURL = 'https://api.thegraph.com/subgraphs/name/eliaxie/hopr-channels'
 const client = new ApolloClient({
@@ -33,6 +34,9 @@ const Root: FC = () => {
   const [showContents, setShowContents] = useState(true);
   const [dataReady, setDataReady] = useState(false);
   const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [localNodeEndpoint, setLocalNodeEndpoint] = useState("");
+  const [remoteError, setRemoteError] = useState("");
+  const [refresh, setRefresh] = useState(false); //refresh sigma at every state change
   const [filtersState, setFiltersState] = useState<FiltersState>({
     clusters: {},
     tags: {},
@@ -153,10 +157,7 @@ const Root: FC = () => {
       let dataset: Dataset
       switch (mode) {
         case VisualMode.Localnode:
-          dataset = {
-            nodes: [],
-            edges: []
-          }
+          dataset = await exploreLocalCluster(localNodeEndpoint)
           break;
         case VisualMode.Subgraph:
           dataset = await runQuery()
@@ -166,11 +167,12 @@ const Root: FC = () => {
       }
       setDataset(dataset)
       requestAnimationFrame(() => setDataReady(true));
+      setRefresh(!refresh)
     }
 
     setDatabase()
 
-  }, [mode])
+  }, [mode, localNodeEndpoint])
 
   if (!dataset) return null;
 
@@ -194,7 +196,7 @@ const Root: FC = () => {
       >
         <GraphSettingsController hoveredNode={hoveredNode} />
         <GraphEventsController setHoveredNode={setHoveredNode} />
-        <GraphDataController dataset={dataset} filters={filtersState} />
+        <GraphDataController dataset={dataset} filters={filtersState} refresh={refresh} />
         {!dataReady && (<>Loading data...</>)}
         {dataReady && (
           <>
@@ -243,10 +245,10 @@ const Root: FC = () => {
                   <GrClose />
                 </button>
               </div>
-              <GraphTitle filters={filtersState} />
+              <GraphTitle filters={filtersState} refresh={refresh} />
 
               <div className="panels">
-                <SearchField filters={filtersState} mode={mode} />
+                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField filters={filtersState} mode={mode} />}
                 <DescriptionPanel mode={mode} />
                 {/*<ClustersPanel
                   clusters={clusters}
@@ -293,4 +295,8 @@ const Root: FC = () => {
 
 export default Root;
 
+
+function exploreLocalCluster(localNodeEndpoint: string): Dataset | PromiseLike<Dataset> {
+  throw new Error("Function not implemented.");
+}
 
