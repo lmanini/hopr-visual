@@ -60,6 +60,10 @@ export interface Channels {
   commitmentHistory: Bytes[]
 }
 
+export enum VisualMode {
+  Subgraph, Localnode
+}
+
 export interface ApolloAccountQuery {
   accounts: Accounts[]
 }

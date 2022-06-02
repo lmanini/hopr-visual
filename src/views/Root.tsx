@@ -9,7 +9,7 @@ import GraphSettingsController from "./GraphSettingsController";
 import GraphEventsController from "./GraphEventsController";
 import GraphDataController from "./GraphDataController";
 import DescriptionPanel from "./DescriptionPanel";
-import { ApolloAccountQuery, ApolloChannelQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag } from "../types";
+import { ApolloAccountQuery, ApolloChannelQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag, VisualMode } from "../types";
 import ClustersPanel from "./ClustersPanel";
 import SearchField from "./SearchField";
 import drawLabel from "../canvas-utils";
@@ -18,8 +18,8 @@ import TagsPanel from "./TagsPanel";
 import { datasetBuilderAccount, datasetBuilderChannel } from "../utils/dataset-utils"
 
 import "react-sigma-v2/lib/react-sigma-v2.css";
-import { GrClose } from "react-icons/gr";
-import { BiRadioCircleMarked, BiBookContent } from "react-icons/bi";
+import { GrClose, GrNetwork } from "react-icons/gr";
+import { BiRadioCircleMarked, BiBookContent, BiNetworkChart } from "react-icons/bi";
 import { BsArrowsFullscreen, BsFullscreenExit, BsZoomIn, BsZoomOut } from "react-icons/bs";
 import { ethers } from "ethers";
 
@@ -37,7 +37,7 @@ const Root: FC = () => {
     clusters: {},
     tags: {},
   });
-
+  const [mode, setMode] = useState<VisualMode>(VisualMode.Subgraph)
 
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -74,7 +74,20 @@ const Root: FC = () => {
   }
 `;
 
-  async function runQuery() {
+  function toggleVisualMode(): void {
+    switch (mode) {
+      case VisualMode.Localnode:
+        setMode(VisualMode.Subgraph)
+        break;
+      case VisualMode.Subgraph:
+        setMode(VisualMode.Localnode)
+        break;
+      default:
+        throw new Error("VisualMode not supported")
+    }
+  }
+
+  async function runQuery(): Promise<Dataset> {
 
     console.log("Loading data...")
 
@@ -98,35 +111,66 @@ const Root: FC = () => {
       for (let i = 0; i < res[1].length; i++) {
         dataset = datasetBuilderChannel(res[1][i].data, dataset)
       }
-
-      setDataset(dataset)
-      requestAnimationFrame(() => setDataReady(true));
+      console.log("Data is ready")
+      return dataset
     } catch (error) {
       console.error(error)
+      throw new Error("Thegraph fetch error")
     }
   }
 
+  // useEffect(() => {
+
+  //   const setDatabase = async () => {
+  //     let dataset = await runQuery()
+  //     setDataset(dataset)
+  //     requestAnimationFrame(() => setDataReady(true));
+  //   }
+
+  //   setDatabase()
+
+  //   // if (loading) {
+  //   //   console.log("loading...")
+  //   //   return
+  //   // }
+
+  //   // if (error) {
+  //   //   console.log("Error: ", error)
+  //   //   return;
+  //   // }
+
+  //   // if (data) {
+  //   //   console.log("Data: ", data);
+  //   //   let dataset: Dataset = datasetBuilder(data)
+  //   //   setDataset(dataset)
+  //   //   requestAnimationFrame(() => setDataReady(true));
+  //   // }
+  // }, [])
+
   useEffect(() => {
 
-    runQuery()
+    const setDatabase = async () => {
+      let dataset: Dataset
+      switch (mode) {
+        case VisualMode.Localnode:
+          dataset = {
+            nodes: [],
+            edges: []
+          }
+          break;
+        case VisualMode.Subgraph:
+          dataset = await runQuery()
+          break;
+        default:
+          throw new Error("VisualMode not supported")
+      }
+      setDataset(dataset)
+      requestAnimationFrame(() => setDataReady(true));
+    }
 
-    // if (loading) {
-    //   console.log("loading...")
-    //   return
-    // }
+    setDatabase()
 
-    // if (error) {
-    //   console.log("Error: ", error)
-    //   return;
-    // }
-
-    // if (data) {
-    //   console.log("Data: ", data);
-    //   let dataset: Dataset = datasetBuilder(data)
-    //   setDataset(dataset)
-    //   requestAnimationFrame(() => setDataReady(true));
-    // }
-  }, [])
+  }, [mode])
 
   if (!dataset) return null;
 
@@ -176,6 +220,17 @@ const Root: FC = () => {
                 customZoomOut={<BsZoomOut />}
                 customZoomCenter={<BiRadioCircleMarked />}
               />
+              {/* <ModeController className="ico" mod= { mode }/> */}
+              <div className="ico">
+                <button
+                  type="button"
+                  className="Mode"
+                  onClick={() => toggleVisualMode()}
+                  title="Toggle Graph Mode"
+                >
+                  <BiNetworkChart />
+                </button>
+              </div>
             </div>
             <div className="contents">
               <div className="ico">
@@ -191,8 +246,8 @@ const Root: FC = () => {
               <GraphTitle filters={filtersState} />
 
               <div className="panels">
-                <SearchField filters={filtersState} />
-                <DescriptionPanel />
+                <SearchField filters={filtersState} mode={mode} />
+                <DescriptionPanel mode={mode} />
                 {/*<ClustersPanel
                   clusters={clusters}
                   filters={filtersState}
@@ -237,3 +292,5 @@ const Root: FC = () => {
 };
 
 export default Root;
+
+

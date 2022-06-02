@@ -1,9 +1,11 @@
 import React, { FC } from "react";
 import { BsInfoCircle } from "react-icons/bs";
+import { VisualMode } from "../types";
 
 import Panel from "./Panel";
 
-const DescriptionPanel: FC = () => {
+
+const DescriptionPanel: FC<{ mode: VisualMode }> = ({ mode }) => {
   return (
     <Panel
       initiallyDeployed

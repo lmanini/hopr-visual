@@ -3,7 +3,7 @@ import { useSigma } from "react-sigma-v2";
 import { Attributes } from "graphology-types";
 import { BsSearch } from "react-icons/bs";
 
-import { FiltersState } from "../types";
+import { FiltersState, VisualMode } from "../types";
 
 /**
  * This component is basically a fork from React-sigma-v2's SearchControl
@@ -11,10 +11,11 @@ import { FiltersState } from "../types";
  * 1. We need to hide hidden nodes from results
  * 2. We need custom markup
  */
-const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
+const SearchField: FC<{ filters: FiltersState, mode: VisualMode }> = ({ filters, mode }) => {
   const sigma = useSigma();
 
   const [search, setSearch] = useState<string>("");
+  const [modeSearch, setModeSearch] = useState<string>("");
   const [values, setValues] = useState<Array<{ id: string; label: string }>>([]);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -31,7 +32,16 @@ const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
   };
 
   // Refresh values when search is updated:
-  useEffect(() => refreshValues(), [search]);
+  useEffect(() => {
+    switch (mode) {
+      case VisualMode.Localnode:
+        break;
+      case VisualMode.Subgraph:
+        return refreshValues()
+      default: throw new Error()
+    }
+
+  }, [search]);
 
   // Refresh values when filters are updated (but wait a frame first):
   useEffect(() => {
@@ -44,14 +54,14 @@ const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
     sigma.getGraph().setNodeAttribute(selected, "highlighted", true);
     const nodeDisplayData = sigma.getNodeDisplayData(selected);
 
-    if (nodeDisplayData)
+    if (nodeDisplayData) {
       sigma.getCamera().animate(
         { ...nodeDisplayData, ratio: 0.05 },
         {
           duration: 600,
         },
       );
-
+    }
     return () => {
       sigma.getGraph().setNodeAttribute(selected, "highlighted", false);
     };
@@ -60,14 +70,25 @@ const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const searchString = e.target.value;
     const valueItem = values.find((value) => value.label === searchString);
-    if (valueItem) {
-      setSearch(valueItem.label);
-      setValues([]);
-      setSelected(valueItem.id);
-    } else {
-      setSelected(null);
-      setSearch(searchString);
+    switch (mode) {
+      case VisualMode.Subgraph:
+        if (valueItem) {
+          setSearch(valueItem.label);
+          setValues([]);
+          setSelected(valueItem.id);
+        } else {
+          setSelected(null);
+          setSearch(searchString);
+        }
+        break;
+      case VisualMode.Localnode:
+        setSearch(searchString);
+        // console.log("Input unavailable1")
+        break;
+      default:
+        throw new Error()
     }
+
   };
 
   const onKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -81,7 +102,7 @@ const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
     <div className="search-wrapper">
       <input
         type="search"
-        placeholder="Search in nodes..."
+        placeholder={mode === VisualMode.Subgraph ? "Search in nodes..." : "Insert local node endpoint"}
         list="nodes"
         value={search}
         onChange={onInputChange}
@@ -89,11 +110,11 @@ const SearchField: FC<{ filters: FiltersState }> = ({ filters }) => {
       />
       <BsSearch className="icon" />
       <datalist id="nodes">
-        {values.map((value: { id: string; label: string }) => (
+        {mode === VisualMode.Subgraph ? values.map((value: { id: string; label: string }) => (
           <option key={value.id} value={value.label}>
             {value.label}
           </option>
-        ))}
+        )) : <option> "test" </option>}
       </datalist>
     </div>
   );

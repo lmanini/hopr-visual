@@ -66,7 +66,6 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState }> = ({ 
       //i++;
     }
     );
-    console.log("graph: ", graph)
     random.assign(graph);
     const settings = forceAtlas2.inferSettings(graph);
     forceAtlas2.assign(graph, { settings, iterations: 200 });

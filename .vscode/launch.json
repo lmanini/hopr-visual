@@ -10,6 +10,6 @@
             "name": "Launch Chrome",
             "url": "http://localhost:5000/hopr-visual",
             "webRoot": "${workspaceFolder}"
-          }
+        }
     ]
 }
