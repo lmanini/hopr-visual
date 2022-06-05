@@ -4,6 +4,7 @@ import { Attributes } from "graphology-types";
 import { BsSearch } from "react-icons/bs";
 
 import { FiltersState, VisualMode } from "../types";
+import internal from "stream";
 
 /**
  * This component is basically a fork from React-sigma-v2's SearchControl
@@ -11,90 +12,30 @@ import { FiltersState, VisualMode } from "../types";
  * 1. We need to hide hidden nodes from results
  * 2. We need custom markup
  */
-const EndpointField: FC<{ filters: FiltersState, mode: VisualMode }> = ({ filters, mode }) => {
+const EndpointField: FC<{ endpoint: string, remoteValid: boolean, error: string, setRemoteEndpoint: React.Dispatch<React.SetStateAction<string>>, setRemoteValid: React.Dispatch<React.SetStateAction<boolean>> }> = ({ endpoint, remoteValid, error, setRemoteEndpoint, setRemoteValid }) => {
   const sigma = useSigma();
 
-  const [search, setSearch] = useState<string>("");
-  const [modeSearch, setModeSearch] = useState<string>("");
-  const [values, setValues] = useState<Array<{ id: string; label: string }>>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [internalValid, setInternalValid] = useState<boolean>(false);
 
-  const refreshValues = () => {
-    const newValues: Array<{ id: string; label: string }> = [];
-    const lcSearch = search.toLowerCase();
-    if (!selected && search.length > 1) {
-      sigma.getGraph().forEachNode((key: string, attributes: Attributes): void => {
-        if (!attributes.hidden && attributes.label && attributes.label.toLowerCase().indexOf(lcSearch) === 0)
-          newValues.push({ id: key, label: attributes.label });
-      });
-    }
-    setValues(newValues);
-  };
-
-  // Refresh values when search is updated:
-  useEffect(() => {
-    switch (mode) {
-      case VisualMode.Localnode:
-        break;
-      case VisualMode.Subgraph:
-        return refreshValues()
-      default: throw new Error()
-    }
-
-  }, [search]);
 
   // Refresh values when filters are updated (but wait a frame first):
   useEffect(() => {
-    requestAnimationFrame(refreshValues);
-  }, [filters]);
-
-  useEffect(() => {
-    if (!selected) return;
-
-    sigma.getGraph().setNodeAttribute(selected, "highlighted", true);
-    const nodeDisplayData = sigma.getNodeDisplayData(selected);
-
-    if (nodeDisplayData) {
-      sigma.getCamera().animate(
-        { ...nodeDisplayData, ratio: 0.05 },
-        {
-          duration: 600,
-        },
-      );
-    }
-    return () => {
-      sigma.getGraph().setNodeAttribute(selected, "highlighted", false);
-    };
-  }, [selected]);
+    const regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
+    // console.log("Pattern is ", valid, " for ", endpoint)
+    setInternalValid(regex.test(endpoint))
+  }, [endpoint]);
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const searchString = e.target.value;
-    const valueItem = values.find((value) => value.label === searchString);
-    switch (mode) {
-      case VisualMode.Subgraph:
-        if (valueItem) {
-          setSearch(valueItem.label);
-          setValues([]);
-          setSelected(valueItem.id);
-        } else {
-          setSelected(null);
-          setSearch(searchString);
-        }
-        break;
-      case VisualMode.Localnode:
-        setSearch(searchString);
-        // console.log("Input unavailable1")
-        break;
-      default:
-        throw new Error()
-    }
-
+    const input = e.target.value;
+    setSelected(null);
+    setRemoteEndpoint(input);
+    setRemoteValid(false)
   };
 
   const onKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && values.length) {
-      setSearch(values[0].label);
-      setSelected(values[0].id);
+    if (e.key === "Enter" && internalValid) {
+      setRemoteValid(internalValid)
     }
   };
 
@@ -102,20 +43,22 @@ const EndpointField: FC<{ filters: FiltersState, mode: VisualMode }> = ({ filter
     <div className="search-wrapper">
       <input
         type="search"
-        placeholder={mode === VisualMode.Subgraph ? "Search in nodes..." : "Insert local node endpoint"}
+        placeholder={"Insert local node endpoint"}
         list="nodes"
-        value={search}
+        value={endpoint}
         onChange={onInputChange}
         onKeyPress={onKeyPress}
       />
+      <input
+        type="search"
+        placeholder={"Insert local node endpoint"}
+        list="nodes"
+        value={endpoint}
+        onChange={onInputChange}
+        onKeyPress={onKeyPress}
+      />
+      {endpoint.length != 0 ? <> {!internalValid ? <div className="endpointInfo endpointError">Endpoint is invalid </div> : remoteValid ? <div className="endpointInfo endpointSuccess">Connecting to the node...</div> : <div className="endpointInfo endpointSuccess">Press ENTER to connect to the node</div>} </> : <> <div className="endpointInfo endpointEmpty">Insert an endpoint above </div> </>}
       <BsSearch className="icon" />
-      <datalist id="nodes">
-        {mode === VisualMode.Subgraph ? values.map((value: { id: string; label: string }) => (
-          <option key={value.id} value={value.label}>
-            {value.label}
-          </option>
-        )) : <option> "test" </option>}
-      </datalist>
     </div>
   );
 };

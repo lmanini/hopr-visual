@@ -36,6 +36,7 @@ const Root: FC = () => {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [localNodeEndpoint, setLocalNodeEndpoint] = useState("");
   const [remoteError, setRemoteError] = useState("");
+  const [remoteValid, setRemoteValid] = useState(false);
   const [refresh, setRefresh] = useState(false); //refresh sigma at every state change
   const [filtersState, setFiltersState] = useState<FiltersState>({
     clusters: {},
@@ -77,6 +78,30 @@ const Root: FC = () => {
     }
   }
 `;
+
+  function exploreLocalCluster(localNodeEndpoint: string): Dataset | void {
+
+    var axios = require('axios');
+
+    var config = {
+      method: 'get',
+      url: `http://${localNodeEndpoint}/api/v2/node/peers`,
+      headers: {
+        'accept': 'application/json',
+        'x-auth-token': '^^LOCAL-testing-123^^'
+      }
+    };
+
+    axios(config)
+      .then(function (response: { data: any; }) {
+        console.log(JSON.stringify(response.data));
+
+      })
+      .catch(function (error: any) {
+        console.log(error);
+      });
+
+  }
 
   function toggleVisualMode(): void {
     switch (mode) {
@@ -153,11 +178,21 @@ const Root: FC = () => {
 
   useEffect(() => {
 
+    console.log("Remote valid: ", remoteValid)
+
     const setDatabase = async () => {
-      let dataset: Dataset
+      let dataset: Dataset = {
+        nodes: [],
+        edges: []
+      }
       switch (mode) {
         case VisualMode.Localnode:
-          dataset = await exploreLocalCluster(localNodeEndpoint)
+          if (remoteValid) {
+            console.log("Starting exploration at ", localNodeEndpoint)
+            await exploreLocalCluster(localNodeEndpoint)
+          } else {
+            setRefresh(!refresh)
+          }
           break;
         case VisualMode.Subgraph:
           dataset = await runQuery()
@@ -172,7 +207,7 @@ const Root: FC = () => {
 
     setDatabase()
 
-  }, [mode, localNodeEndpoint])
+  }, [mode, remoteValid])
 
   if (!dataset) return null;
 
@@ -248,7 +283,7 @@ const Root: FC = () => {
               <GraphTitle filters={filtersState} refresh={refresh} />
 
               <div className="panels">
-                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField filters={filtersState} mode={mode} />}
+                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField endpoint={localNodeEndpoint} remoteValid={remoteValid} error={remoteError} setRemoteEndpoint={setLocalNodeEndpoint} setRemoteValid={setRemoteValid} />}
                 <DescriptionPanel mode={mode} />
                 {/*<ClustersPanel
                   clusters={clusters}
@@ -294,9 +329,4 @@ const Root: FC = () => {
 };
 
 export default Root;
-
-
-function exploreLocalCluster(localNodeEndpoint: string): Dataset | PromiseLike<Dataset> {
-  throw new Error("Function not implemented.");
-}
 
