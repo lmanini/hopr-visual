@@ -1,5 +1,9 @@
 import { Bytes, ethers } from "ethers";
 
+export enum RemoteStatus {
+  errored = "errored", invalid = "invalid", valid = "valid", selected = "selected", connected = "connected", exploring = "expoloring", complete = "complete"
+}
+
 export interface NodeData {
   key: string;
   label: string;

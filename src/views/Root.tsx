@@ -9,19 +9,18 @@ import GraphSettingsController from "./GraphSettingsController";
 import GraphEventsController from "./GraphEventsController";
 import GraphDataController from "./GraphDataController";
 import DescriptionPanel from "./DescriptionPanel";
-import { ApolloAccountQuery, ApolloChannelQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag, VisualMode } from "../types";
+import { ApolloAccountQuery, ApolloChannelQuery, Cluster, Dataset, DatasetMap, FiltersState, NodeData, NodeWithStats, Tag, VisualMode, RemoteStatus } from "../types";
 import ClustersPanel from "./ClustersPanel";
 import SearchField from "./SearchField";
 import drawLabel from "../canvas-utils";
 import GraphTitle from "./GraphTitle";
 import TagsPanel from "./TagsPanel";
-import { datasetBuilderAccount, datasetBuilderChannel } from "../utils/dataset-utils"
+import { datasetBuilderAccount, datasetBuilderChannel, exploreLocalCluster } from "../utils/dataset-utils"
 
 import "react-sigma-v2/lib/react-sigma-v2.css";
 import { GrClose, GrNetwork } from "react-icons/gr";
 import { BiRadioCircleMarked, BiBookContent, BiNetworkChart } from "react-icons/bi";
 import { BsArrowsFullscreen, BsFullscreenExit, BsZoomIn, BsZoomOut } from "react-icons/bs";
-import { ethers } from "ethers";
 import EndpointField from "./EndpointField";
 
 const APIURL = 'https://api.thegraph.com/subgraphs/name/eliaxie/hopr-channels'
@@ -30,13 +29,15 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 })
 
+
 const Root: FC = () => {
   const [showContents, setShowContents] = useState(true);
   const [dataReady, setDataReady] = useState(false);
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [localNodeEndpoint, setLocalNodeEndpoint] = useState("");
+  const [nodeToken, setNodeToken] = useState("");
   const [remoteError, setRemoteError] = useState("");
-  const [remoteValid, setRemoteValid] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState(RemoteStatus.invalid);
   const [refresh, setRefresh] = useState(false); //refresh sigma at every state change
   const [filtersState, setFiltersState] = useState<FiltersState>({
     clusters: {},
@@ -78,30 +79,6 @@ const Root: FC = () => {
     }
   }
 `;
-
-  function exploreLocalCluster(localNodeEndpoint: string): Dataset | void {
-
-    var axios = require('axios');
-
-    var config = {
-      method: 'get',
-      url: `http://${localNodeEndpoint}/api/v2/node/peers`,
-      headers: {
-        'accept': 'application/json',
-        'x-auth-token': '^^LOCAL-testing-123^^'
-      }
-    };
-
-    axios(config)
-      .then(function (response: { data: any; }) {
-        console.log(JSON.stringify(response.data));
-
-      })
-      .catch(function (error: any) {
-        console.log(error);
-      });
-
-  }
 
   function toggleVisualMode(): void {
     switch (mode) {
@@ -178,18 +155,23 @@ const Root: FC = () => {
 
   useEffect(() => {
 
-    console.log("Remote valid: ", remoteValid)
+    console.log(`Remote status ${remoteStatus} at endpoint ${localNodeEndpoint} with token ${nodeToken}`)
 
     const setDatabase = async () => {
-      let dataset: Dataset = {
+      let dataset: Dataset | undefined = {
         nodes: [],
         edges: []
       }
       switch (mode) {
         case VisualMode.Localnode:
-          if (remoteValid) {
+          if (remoteStatus === RemoteStatus.selected) {
             console.log("Starting exploration at ", localNodeEndpoint)
-            await exploreLocalCluster(localNodeEndpoint)
+            try {
+              dataset = await exploreLocalCluster(localNodeEndpoint, nodeToken, setRemoteStatus, setRemoteError)
+            } catch (error: any) {
+              setRemoteError(error)
+              setRemoteStatus(RemoteStatus.errored)
+            }
           } else {
             setRefresh(!refresh)
           }
@@ -200,6 +182,10 @@ const Root: FC = () => {
         default:
           throw new Error("VisualMode not supported")
       }
+
+      if (dataset == undefined)
+        return;
+
       setDataset(dataset)
       requestAnimationFrame(() => setDataReady(true));
       setRefresh(!refresh)
@@ -207,7 +193,7 @@ const Root: FC = () => {
 
     setDatabase()
 
-  }, [mode, remoteValid])
+  }, [mode, remoteStatus, localNodeEndpoint, nodeToken])
 
   if (!dataset) return null;
 
@@ -283,7 +269,7 @@ const Root: FC = () => {
               <GraphTitle filters={filtersState} refresh={refresh} />
 
               <div className="panels">
-                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField endpoint={localNodeEndpoint} remoteValid={remoteValid} error={remoteError} setRemoteEndpoint={setLocalNodeEndpoint} setRemoteValid={setRemoteValid} />}
+                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField endpoint={localNodeEndpoint} remoteStatus={remoteStatus} nodeToken={nodeToken} error={remoteError} setNodeToken={setNodeToken} setRemoteEndpoint={setLocalNodeEndpoint} setRemoteStatus={setRemoteStatus} />}
                 <DescriptionPanel mode={mode} />
                 {/*<ClustersPanel
                   clusters={clusters}

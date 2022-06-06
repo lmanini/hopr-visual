@@ -3,8 +3,10 @@ import { useSigma } from "react-sigma-v2";
 import { Attributes } from "graphology-types";
 import { BsSearch } from "react-icons/bs";
 
-import { FiltersState, VisualMode } from "../types";
+import { RemoteStatus, FiltersState, VisualMode } from "../types";
 import internal from "stream";
+import { MdPassword } from "react-icons/md";
+import { GrNodes } from "react-icons/gr";
 
 /**
  * This component is basically a fork from React-sigma-v2's SearchControl
@@ -12,55 +14,102 @@ import internal from "stream";
  * 1. We need to hide hidden nodes from results
  * 2. We need custom markup
  */
-const EndpointField: FC<{ endpoint: string, remoteValid: boolean, error: string, setRemoteEndpoint: React.Dispatch<React.SetStateAction<string>>, setRemoteValid: React.Dispatch<React.SetStateAction<boolean>> }> = ({ endpoint, remoteValid, error, setRemoteEndpoint, setRemoteValid }) => {
+const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToken: string, error: string, setNodeToken: React.Dispatch<React.SetStateAction<string>>, setRemoteEndpoint: React.Dispatch<React.SetStateAction<string>>, setRemoteStatus: React.Dispatch<React.SetStateAction<RemoteStatus>> }> = ({ endpoint, remoteStatus, nodeToken, error, setNodeToken, setRemoteEndpoint, setRemoteStatus }) => {
   const sigma = useSigma();
-
-  const [selected, setSelected] = useState<string | null>(null);
-  const [internalValid, setInternalValid] = useState<boolean>(false);
-
 
   // Refresh values when filters are updated (but wait a frame first):
   useEffect(() => {
-    const regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
-    // console.log("Pattern is ", valid, " for ", endpoint)
-    setInternalValid(regex.test(endpoint))
+    validateEndpoint(endpoint)
   }, [endpoint]);
 
-  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  function validateEndpoint(endpoint: string) {
+    const regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
+    setRemoteStatus(regex.test(endpoint) ? RemoteStatus.valid : RemoteStatus.invalid)
+  }
+
+  useEffect(() => {
+  }, [remoteStatus]);
+
+  const onInputNodeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-    setSelected(null);
     setRemoteEndpoint(input);
-    setRemoteValid(false)
   };
 
   const onKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && internalValid) {
-      setRemoteValid(internalValid)
+    if (e.key === "Enter" && remoteStatus === RemoteStatus.valid) {
+      setRemoteStatus(RemoteStatus.selected)
     }
   };
 
+  const onInputTokenChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    setNodeToken(input);
+    setRemoteStatus(RemoteStatus.invalid)
+    validateEndpoint(endpoint)
+  };
+
+  function generateEndpointMessage(): React.ReactNode {
+    //endpoint.length != 0 ? <> {!internalValid ? <div className="endpointInfo endpointError">Endpoint is invalid </div> : remoteStatus === RemoteStatus.valid ? <div className="endpointInfo endpointSuccess">Connecting to the node...</div> : <div className="endpointInfo endpointSuccess">Press ENTER to connect to the node</div>} </> : <> <div className="endpointInfo endpointEmpty">Insert an endpoint above </div> </>}
+    var classes: string[] = ["endpointInfo"]
+    var message = ""
+    switch (remoteStatus) {
+      case RemoteStatus.complete:
+        message = "Graph complete"
+        classes = classes.concat("endpointSuccess")
+        break
+      case RemoteStatus.connected:
+        message = "Connected to node"
+        classes = classes.concat("endpointSuccess")
+        break
+      case RemoteStatus.errored:
+        message = error.toString()
+        classes = classes.concat("endpointError")
+        break
+      case RemoteStatus.exploring:
+        message = "Exploring graph..."
+        break
+      case RemoteStatus.invalid:
+        message = "Endpoint is invalid"
+        classes = classes.concat("endpointError")
+        break
+      case RemoteStatus.selected:
+        message = "Connecting to node..."
+        break
+      case RemoteStatus.valid:
+        message = "Press ENTER to connect to the node"
+        classes = classes.concat("endpointSuccess")
+        break
+      default:
+    }
+    var classArray = ""
+    classes.forEach((className) => {
+      classArray += className + " "
+    })
+    return <div className={classArray}> {message} </div>
+  }
+
   return (
-    <div className="search-wrapper">
+    <><div className="search-wrapper">
       <input
         type="search"
         placeholder={"Insert local node endpoint"}
         list="nodes"
         value={endpoint}
-        onChange={onInputChange}
-        onKeyPress={onKeyPress}
-      />
-      <input
-        type="search"
-        placeholder={"Insert local node endpoint"}
-        list="nodes"
-        value={endpoint}
-        onChange={onInputChange}
-        onKeyPress={onKeyPress}
-      />
-      {endpoint.length != 0 ? <> {!internalValid ? <div className="endpointInfo endpointError">Endpoint is invalid </div> : remoteValid ? <div className="endpointInfo endpointSuccess">Connecting to the node...</div> : <div className="endpointInfo endpointSuccess">Press ENTER to connect to the node</div>} </> : <> <div className="endpointInfo endpointEmpty">Insert an endpoint above </div> </>}
-      <BsSearch className="icon" />
-    </div>
+        onChange={onInputNodeChange}
+        onKeyPress={onKeyPress} />
+      <MdPassword className="icon" />
+    </div><div className="search-wrapper">
+        <input
+          type="search"
+          placeholder={"Insert cluster token"}
+          list="nodes"
+          value={nodeToken}
+          onChange={onInputTokenChange}
+          onKeyPress={onKeyPress} />
+        {generateEndpointMessage()}
+        <GrNodes className="icon" />
+      </div></>
   );
 };
 
-export default EndpointField;
+export default EndpointField;      
