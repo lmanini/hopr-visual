@@ -17,7 +17,7 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
 
     var config = {
         method: 'get',
-        url: `http://${localNodeEndpoint}/api/v2/node/peers`,
+        url: `https://${localNodeEndpoint}/api/v2/node/peers`,
         headers: {
             'accept': 'application/json',
             'x-auth-token': nodeToken
