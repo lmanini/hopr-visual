@@ -34,6 +34,10 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
         setRemoteStatus(RemoteStatus.errored)
     }
 
+    if (responseData != undefined) {
+        setRemoteStatus(RemoteStatus.connected)
+    }
+
     console.log(JSON.stringify(responseData));
 
     return undefined
