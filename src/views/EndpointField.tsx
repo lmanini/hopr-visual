@@ -22,9 +22,11 @@ const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToke
     validateEndpoint(endpoint)
   }, [endpoint]);
 
-  function validateEndpoint(endpoint: string) {
-    const regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
-    setRemoteStatus(regex.test(endpoint) ? RemoteStatus.valid : RemoteStatus.invalid)
+  function validateEndpoint(endpoint: string): RemoteStatus {
+    const regex = /^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|localhost)(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
+    let remoteStatus = regex.test(endpoint) ? RemoteStatus.valid : RemoteStatus.invalid
+    setRemoteStatus(remoteStatus)
+    return remoteStatus
   }
 
   useEffect(() => {
@@ -39,6 +41,12 @@ const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToke
     if (e.key === "Enter" && remoteStatus === RemoteStatus.valid) {
       setRemoteStatus(RemoteStatus.selected)
     }
+    if (e.key === "Enter" && remoteStatus !== RemoteStatus.valid) {
+      setRemoteStatus(RemoteStatus.invalid)
+      if (validateEndpoint(endpoint) === RemoteStatus.valid) {
+        setRemoteStatus(RemoteStatus.selected)
+      }
+    }
   };
 
   const onInputTokenChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +57,6 @@ const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToke
   };
 
   function generateEndpointMessage(): React.ReactNode {
-    //endpoint.length != 0 ? <> {!internalValid ? <div className="endpointInfo endpointError">Endpoint is invalid </div> : remoteStatus === RemoteStatus.valid ? <div className="endpointInfo endpointSuccess">Connecting to the node...</div> : <div className="endpointInfo endpointSuccess">Press ENTER to connect to the node</div>} </> : <> <div className="endpointInfo endpointEmpty">Insert an endpoint above </div> </>}
     var classes: string[] = ["endpointInfo"]
     var message = ""
     switch (remoteStatus) {

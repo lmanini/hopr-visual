@@ -35,11 +35,11 @@ export interface Dataset {
 */
 
 export interface Dataset {
-  nodes: Accounts[];
-  edges: Channels[];
+  nodes: Account[];
+  edges: Channel[];
 }
 
-export interface Accounts {
+export interface Account {
   id: string
   publicKey: string
   balance: Number
@@ -47,7 +47,7 @@ export interface Accounts {
   isActive: boolean
 }
 
-export interface Channels {
+export interface Channel {
   id: string
   source: {
     id: string
@@ -69,10 +69,10 @@ export enum VisualMode {
 }
 
 export interface ApolloAccountQuery {
-  accounts: Accounts[]
+  accounts: Account[]
 }
 export interface ApolloChannelQuery {
-  channels: Channels[]
+  channels: Channel[]
 }
 
 export interface FiltersState {
