@@ -23,9 +23,10 @@ const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToke
   }, [endpoint]);
 
   function validateEndpoint(endpoint: string): RemoteStatus {
-    const regex = /^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|localhost)(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
-    let remoteStatus = regex.test(endpoint) ? RemoteStatus.valid : RemoteStatus.invalid
-    setRemoteStatus(RemoteStatus.valid)//remoteStatus)
+    const ipregex = /^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|localhost)(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{2,5})|([0-9]{2,4})))$/
+    const gitpodregex = /^([0-9]{5})-hoprnet(.+)(\.gitpod\.io)$/
+    let remoteStatus = ipregex.test(endpoint) || gitpodregex.test(endpoint) ? RemoteStatus.valid : RemoteStatus.invalid
+    setRemoteStatus(remoteStatus)
     return remoteStatus
   }
 

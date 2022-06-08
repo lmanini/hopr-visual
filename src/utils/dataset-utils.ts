@@ -110,7 +110,7 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
             if (node == undefined || visitedMap.has(node.peerId)) {
                 continue
             }
-            let endpoint = parseEndpoint(node)
+            let endpoint = parseEndpoint(node, localNodeEndpoint)
             node.endpoint = endpoint
             let req = await makePeerRequest(endpoint, nodeToken)
             if (req.error != null) continue
@@ -174,7 +174,7 @@ async function makePeerRequest(localNodeEndpoint: string, nodeToken: string): Pr
 
     var config = {
         method: 'get',
-        url: `http://${localNodeEndpoint}/api/v2/node/peers`,
+        url: `https://${localNodeEndpoint}/api/v2/node/peers`,
         //url: `https://jsonplaceholder.typicode.com/posts`,
         headers: {
             'accept': 'application/json',
@@ -231,7 +231,7 @@ async function makeAccount(node: HoprNodeHeader, nodeToken: string): Promise<Acc
 
     var config = {
         method: 'get',
-        url: `http://${node.endpoint}/api/v2/account/addresses`,
+        url: `https://${node.endpoint}/api/v2/account/addresses`,
         headers: {
             'accept': 'application/json',
             'x-auth-token': nodeToken
@@ -253,11 +253,18 @@ async function makeAccount(node: HoprNodeHeader, nodeToken: string): Promise<Acc
     return account
 }
 
-function parseEndpoint(node: HoprNodeHeader): string {
-    let splitted = node.multiAddr.split("/")
-    let ip = splitted[2]
-    let port = parseInt(splitted[4]) % 10 + 13300 //changes port 190xx to 133xx
-    return `${ip}:${port}`
+function parseEndpoint(node: HoprNodeHeader, localEndpoing: string): string {
+    if (localEndpoing.includes("gitpod")) {
+        let splitted = node.multiAddr.split("/")
+        let gitpodUrl = localEndpoing.substring(5)
+        let port = parseInt(splitted[4]) % 10 + 13300 //changes port 190xx to 133xx
+        return `${port}${gitpodUrl}`
+    } else {
+        let splitted = node.multiAddr.split("/")
+        let ip = splitted[2]
+        let port = parseInt(splitted[4]) % 10 + 13300 //changes port 190xx to 133xx
+        return `${ip}:${port}`
+    }
 }
 
 async function makeEdges(hoprNode: HoprNodeHeader, nodeToken: string, account: Account): Promise<ChannelRequest> {
@@ -269,7 +276,7 @@ async function makeEdges(hoprNode: HoprNodeHeader, nodeToken: string, account: A
 
     var config = {
         method: 'get',
-        url: `http://${hoprNode.endpoint}/api/v2/channels`,
+        url: `https://${hoprNode.endpoint}/api/v2/channels`,
         headers: {
             'accept': 'application/json',
             'x-auth-token': nodeToken
