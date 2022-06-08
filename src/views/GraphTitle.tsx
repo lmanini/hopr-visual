@@ -29,15 +29,8 @@ const GraphTitle: FC<{ filters: FiltersState, refresh: boolean }> = ({ filters, 
       <h1>The HOPR Network</h1>
       <h2>
         <i>
-          {graph.order} node{graph.order > 1 ? "s" : ""}{" "}
-          {visibleItems.nodes !== graph.order
-            ? ` (only ${prettyPercentage(visibleItems.nodes / graph.order)} visible)`
-            : ""}
-          , {graph.size} edge
+          {graph.order} node{graph.order > 1 ? "s" : ""}, {graph.size} edge
           {graph.size > 1 ? "s" : ""}{" "}
-          {visibleItems.edges !== graph.size
-            ? ` (only ${prettyPercentage(visibleItems.edges / graph.size)} visible)`
-            : ""}
         </i>
       </h2>
     </div>

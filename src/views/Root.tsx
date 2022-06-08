@@ -125,34 +125,6 @@ const Root: FC = () => {
     }
   }
 
-  // useEffect(() => {
-
-  //   const setDatabase = async () => {
-  //     let dataset = await runQuery()
-  //     setDataset(dataset)
-  //     requestAnimationFrame(() => setDataReady(true));
-  //   }
-
-  //   setDatabase()
-
-  //   // if (loading) {
-  //   //   console.log("loading...")
-  //   //   return
-  //   // }
-
-  //   // if (error) {
-  //   //   console.log("Error: ", error)
-  //   //   return;
-  //   // }
-
-  //   // if (data) {
-  //   //   console.log("Data: ", data);
-  //   //   let dataset: Dataset = datasetBuilder(data)
-  //   //   setDataset(dataset)
-  //   //   requestAnimationFrame(() => setDataReady(true));
-  //   // }
-  // }, [])
-
   useEffect(() => {
 
     console.log(`Remote status ${remoteStatus} at endpoint ${localNodeEndpoint} with token ${nodeToken}`)
