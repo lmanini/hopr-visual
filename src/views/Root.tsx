@@ -172,7 +172,7 @@ const Root: FC = () => {
               setRemoteError(error)
               setRemoteStatus(RemoteStatus.errored)
             }
-          } else {
+          } else if (remoteStatus === RemoteStatus.invalid || remoteStatus === RemoteStatus.errored) {
             setRefresh(!refresh)
           }
           break;
@@ -193,7 +193,7 @@ const Root: FC = () => {
 
     setDatabase()
 
-  }, [mode, remoteStatus, localNodeEndpoint, nodeToken])
+  }, [mode, remoteStatus === RemoteStatus.errored, remoteStatus === RemoteStatus.selected, remoteStatus === RemoteStatus.invalid, localNodeEndpoint, nodeToken])
 
   if (!dataset) return null;
 

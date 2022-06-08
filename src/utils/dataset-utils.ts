@@ -15,7 +15,14 @@ export function datasetBuilderChannel(query: ApolloChannelQuery, dataset: Datase
 }
 
 enum Status {
-    TypeError, NetworkError, OK
+    TypeError, NetworkError, OK, Level2Error
+}
+
+interface GetAddresses {
+    nativeAddress: string
+    hoprAddress: string
+    native: string
+    hopr: string
 }
 
 interface HoprNodeHeader {
@@ -23,6 +30,28 @@ interface HoprNodeHeader {
     multiAddr: string
     endpoint: string
 }
+
+interface GetChannels {
+    incoming: Incoming[]
+    outgoing: Outgoing[]
+}
+
+interface Incoming {
+    type: string
+    channelId: string
+    peerId: string
+    status: string
+    balance: number
+}
+
+interface Outgoing {
+    type: string
+    channelId: string
+    peerId: string
+    status: string
+    balance: number
+}
+
 
 interface HoprNode extends HoprNodeHeader {
     heartbeats: {
@@ -48,6 +77,12 @@ interface AccountRequest {
     node: HoprNodeHeader
 }
 
+interface ChannelRequest {
+    channel: Channel[]
+    status: Status
+    error?: any
+}
+
 export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: string, setRemoteStatus: React.Dispatch<React.SetStateAction<RemoteStatus>>, setRemoteError: React.Dispatch<React.SetStateAction<string>>): Promise<Dataset | undefined> {
 
     let responseData: PeerRequest
@@ -65,6 +100,8 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
     setRemoteStatus(RemoteStatus.connected)
 
     toBeVisitedList = toBeVisitedList.concat(responseData.nodes)
+
+    setRemoteStatus(RemoteStatus.exploring)
 
     //fetch all the nodes in the network
     try {
@@ -97,20 +134,35 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
         nodes: [],
         edges: []
     }
-    //build nodes and edges (Accounts and Channels) for each node of the network
-    for (const peerId in visitedMap.keys()) {
-        if (Object.prototype.hasOwnProperty.call(visitedMap.keys(), peerId)) {
-            let node: Account
-            let hoprNode = visitedMap.get(peerId)
 
+    //build nodes and edges (Accounts and Channels) for each node of the network
+    for await (const entry of visitedMap.entries()) {
+        let hoprNode = visitedMap.get(entry[0])
+        if (hoprNode == undefined) {
+            setRemoteError("[exploreLocalCluster] Hoprnode cannot be null at this point")
+            setRemoteStatus(RemoteStatus.errored)
+            return
         }
+        let nodeRequest: AccountRequest = await makeAccount(hoprNode, nodeToken)
+        if (nodeRequest.status != Status.OK) {
+            setRemoteError(nodeRequest.error)
+            setRemoteStatus(RemoteStatus.errored)
+            return
+        }
+        let channelsRequest: ChannelRequest = await makeEdges(hoprNode, nodeToken, nodeRequest.account)
+        if (channelsRequest.status != Status.OK) {
+            setRemoteError(nodeRequest.error)
+            setRemoteStatus(RemoteStatus.errored)
+            return
+        }
+        dataset.edges = dataset.edges.concat(channelsRequest.channel)
+        dataset.nodes = dataset.nodes.concat(nodeRequest.account)
     }
 
-    console.log(JSON.stringify(responseData));
+    console.log("ResponseData: ", responseData, " Dataset: ", dataset);
+    setRemoteStatus(RemoteStatus.complete)
 
-
-
-    return undefined
+    return dataset
 }
 
 async function makePeerRequest(localNodeEndpoint: string, nodeToken: string): Promise<PeerRequest> {
@@ -163,7 +215,7 @@ async function makePeerRequest(localNodeEndpoint: string, nodeToken: string): Pr
     return responseData
 }
 
-async function makeAccount(node: HoprNode, nodeToken: string): Promise<AccountRequest> {
+async function makeAccount(node: HoprNodeHeader, nodeToken: string): Promise<AccountRequest> {
 
     let account: AccountRequest = {
         account: {
@@ -179,14 +231,24 @@ async function makeAccount(node: HoprNode, nodeToken: string): Promise<AccountRe
 
     var config = {
         method: 'get',
-        url: `http://${node.endpoint}/api/v2/node/peers`,
-        //url: `https://jsonplaceholder.typicode.com/posts`,
+        url: `http://${node.endpoint}/api/v2/account/addresses`,
         headers: {
             'accept': 'application/json',
             'x-auth-token': nodeToken
         },
         timeout: 1000,
     };
+
+    let { data } = await axios(config)
+
+    try {
+        let addresses = data as GetAddresses
+        account.account.id = addresses.hoprAddress
+        account.account.publicKey = addresses.nativeAddress
+    } catch (error: any) {
+        account.error = "Level 2 error"
+        account.status = Status.Level2Error
+    }
 
     return account
 }
@@ -196,5 +258,54 @@ function parseEndpoint(node: HoprNodeHeader): string {
     let ip = splitted[2]
     let port = parseInt(splitted[4]) % 10 + 13300 //changes port 190xx to 133xx
     return `${ip}:${port}`
+}
+
+async function makeEdges(hoprNode: HoprNodeHeader, nodeToken: string, account: Account): Promise<ChannelRequest> {
+
+    let channelReturn: ChannelRequest = {
+        channel: [],
+        status: Status.OK
+    }
+
+    var config = {
+        method: 'get',
+        url: `http://${hoprNode.endpoint}/api/v2/channels`,
+        headers: {
+            'accept': 'application/json',
+            'x-auth-token': nodeToken
+        },
+        timeout: 1000,
+    };
+
+    let { data } = await axios(config)
+
+    try {
+        let channelsReq = data as GetChannels
+        channelsReq.outgoing.forEach((outgoing) => {
+            account.balance += outgoing.balance
+            let channel: Channel = {
+                id: outgoing.channelId,
+                source: {
+                    id: account.id
+                },
+                destination: {
+                    id: outgoing.peerId
+                },
+                balance: outgoing.balance,
+                status: 0,
+                commitment: [],
+                channelEpoch: 0,
+                ticketEpoch: 0,
+                ticketIndex: 0,
+                commitmentHistory: []
+            }
+            channelReturn.channel = channelReturn.channel.concat(channel)
+        })
+    } catch (error: any) {
+        channelReturn.error = "Level 2 error"
+        channelReturn.status = Status.Level2Error
+    }
+
+    return channelReturn
 }
 

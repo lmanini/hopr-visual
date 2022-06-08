@@ -42,8 +42,8 @@ export interface Dataset {
 export interface Account {
   id: string
   publicKey: string
-  balance: Number
-  openChannelsCount: Number
+  balance: number
+  openChannelsCount: number
   isActive: boolean
 }
 
@@ -55,12 +55,12 @@ export interface Channel {
   destination: {
     id: string
   }
-  balance: Number
+  balance: number
   commitment: Bytes
-  channelEpoch: Number
-  ticketEpoch: Number
-  ticketIndex: Number
-  status: Number
+  channelEpoch: number
+  ticketEpoch: number
+  ticketIndex: number
+  status: number
   commitmentHistory: Bytes[]
 }
 
