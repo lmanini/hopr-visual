@@ -128,7 +128,6 @@ const Root: FC = () => {
   useEffect(() => {
 
     async function loadData() {
-      console.log(`Remote status ${remoteStatus} at endpoint ${localNodeEndpoint} with token ${nodeToken}`)
 
       const setDatabase = async () => {
         let dataset: Dataset | undefined = {
@@ -191,7 +190,7 @@ const Root: FC = () => {
         >
           <GraphSettingsController hoveredNode={hoveredNode} />
           <GraphEventsController setHoveredNode={setHoveredNode} />
-          <GraphDataController dataset={dataset} filters={filtersState} refresh={refresh} />
+          <GraphDataController dataset={dataset} filters={filtersState} refresh={refresh} mode={mode} />
           {dataReady && (
             <>
               <div className="controls">

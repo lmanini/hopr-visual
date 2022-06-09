@@ -6,7 +6,7 @@ import { circular, random } from 'graphology-layout';
 import { Cluster, Dataset, FiltersState, VisualMode } from "../types";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 
-const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState, refresh: boolean }> = ({ dataset, filters, children, refresh }) => {
+const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState, refresh: boolean, mode: VisualMode }> = ({ dataset, filters, children, refresh, mode }) => {
   const sigma = useSigma();
   const graph = sigma.getGraph();
 
@@ -44,7 +44,7 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState, refresh
       graph.addNode(node.id, {
         ...node,
         label: node.id,
-        URL: "https://blockscout.com/xdai/mainnet/address/" + node.id,
+        URL: mode === VisualMode.Subgraph ? "https://blockscout.com/xdai/mainnet/address/" + node.id : "https://docs.hoprnet.org/developers/intro",
         score: node.balance,
         cluster: "1",
         tag: "nodes",

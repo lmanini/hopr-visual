@@ -159,7 +159,6 @@ export async function exploreLocalCluster(localNodeEndpoint: string, nodeToken: 
         dataset.nodes = dataset.nodes.concat(nodeRequest.account)
     }
 
-    console.log("ResponseData: ", responseData, " Dataset: ", dataset);
     setRemoteStatus(RemoteStatus.complete)
 
     return dataset
