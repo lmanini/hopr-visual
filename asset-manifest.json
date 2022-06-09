@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/hopr-visual/static/css/main.3300c6a3.css",
-    "main.js": "/hopr-visual/static/js/main.16f8f70c.js",
+    "main.css": "/hopr-visual/static/css/main.ee64fb5b.css",
+    "main.js": "/hopr-visual/static/js/main.1bbe15ea.js",
     "index.html": "/hopr-visual/index.html",
-    "main.3300c6a3.css.map": "/hopr-visual/static/css/main.3300c6a3.css.map",
-    "main.16f8f70c.js.map": "/hopr-visual/static/js/main.16f8f70c.js.map"
+    "main.ee64fb5b.css.map": "/hopr-visual/static/css/main.ee64fb5b.css.map",
+    "main.1bbe15ea.js.map": "/hopr-visual/static/js/main.1bbe15ea.js.map"
   },
   "entrypoints": [
-    "static/css/main.3300c6a3.css",
-    "static/js/main.16f8f70c.js"
+    "static/css/main.ee64fb5b.css",
+    "static/js/main.1bbe15ea.js"
   ]
 }
