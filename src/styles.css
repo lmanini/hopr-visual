@@ -193,6 +193,7 @@ ul>li {
 
 .text-muted {
   color: var(--dark-grey);
+  margin-top: 3px;
 }
 
 .text-small {
@@ -233,6 +234,10 @@ ul>li {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.descriptionPanel {
+  text-align: justify;
 }
 
 .panel h2 button:hover {
