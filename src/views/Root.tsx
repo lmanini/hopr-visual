@@ -33,7 +33,7 @@ const client = new ApolloClient({
 const Root: FC = () => {
   const [showContents, setShowContents] = useState(true);
   const [dataReady, setDataReady] = useState(false);
-  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [dataset, setDataset] = useState<Dataset>({} as Dataset);
   const [localNodeEndpoint, setLocalNodeEndpoint] = useState("");
   const [nodeToken, setNodeToken] = useState("");
   const [remoteError, setRemoteError] = useState("");
@@ -127,162 +127,130 @@ const Root: FC = () => {
 
   useEffect(() => {
 
-    console.log(`Remote status ${remoteStatus} at endpoint ${localNodeEndpoint} with token ${nodeToken}`)
+    async function loadData() {
+      console.log(`Remote status ${remoteStatus} at endpoint ${localNodeEndpoint} with token ${nodeToken}`)
 
-    const setDatabase = async () => {
-      let dataset: Dataset | undefined = {
-        nodes: [],
-        edges: []
-      }
-      switch (mode) {
-        case VisualMode.Localnode:
-          if (remoteStatus === RemoteStatus.selected) {
-            console.log("Starting exploration at ", localNodeEndpoint)
-            try {
-              dataset = await exploreLocalCluster(localNodeEndpoint, nodeToken, setRemoteStatus, setRemoteError)
-            } catch (error: any) {
-              setRemoteError(error)
-              setRemoteStatus(RemoteStatus.errored)
+      const setDatabase = async () => {
+        let dataset: Dataset | undefined = {
+          nodes: [],
+          edges: []
+        }
+        switch (mode) {
+          case VisualMode.Localnode:
+            if (remoteStatus === RemoteStatus.selected) {
+              console.log("Starting exploration at ", localNodeEndpoint)
+              try {
+                dataset = await exploreLocalCluster(localNodeEndpoint, nodeToken, setRemoteStatus, setRemoteError)
+              } catch (error: any) {
+                setRemoteError(error)
+                setRemoteStatus(RemoteStatus.errored)
+              }
+            } else if (remoteStatus === RemoteStatus.invalid || remoteStatus === RemoteStatus.errored) {
+              setRefresh(!refresh)
             }
-          } else if (remoteStatus === RemoteStatus.invalid || remoteStatus === RemoteStatus.errored) {
-            setRefresh(!refresh)
-          }
-          break;
-        case VisualMode.Subgraph:
-          dataset = await runQuery()
-          break;
-        default:
-          throw new Error("VisualMode not supported")
+            break;
+          case VisualMode.Subgraph:
+            dataset = await runQuery()
+            break;
+          default:
+            throw new Error("VisualMode not supported")
+        }
+
+        if (dataset == undefined)
+          return;
+
+        setDataset(dataset)
+        requestAnimationFrame(() => setDataReady(true));
+        setRefresh(!refresh)
       }
 
-      if (dataset == undefined)
-        return;
-
-      setDataset(dataset)
-      requestAnimationFrame(() => setDataReady(true));
-      setRefresh(!refresh)
+      setDatabase()
     }
 
-    setDatabase()
-
+    loadData()
   }, [mode, remoteStatus === RemoteStatus.errored, remoteStatus === RemoteStatus.selected, remoteStatus === RemoteStatus.invalid, localNodeEndpoint, nodeToken])
-
-  if (!dataset) return null;
 
   return (
     <div id="app-root" className={showContents ? "show-contents" : ""}>
-      <SigmaContainer
-        graphOptions={{ type: "directed" }}
-        initialSettings={{
-          nodeProgramClasses: { image: getNodeProgramImage() },
-          labelRenderer: drawLabel,
-          defaultNodeType: "image",
-          defaultEdgeType: "arrow",
-          renderEdgeLabels: true,
-          labelDensity: 0.07,
-          labelGridCellSize: 60,
-          labelRenderedSizeThreshold: 15,
-          labelFont: "Lato, sans-serif",
-          zIndex: true,
-        }}
-        className="react-sigma"
-      >
-        <GraphSettingsController hoveredNode={hoveredNode} />
-        <GraphEventsController setHoveredNode={setHoveredNode} />
-        <GraphDataController dataset={dataset} filters={filtersState} refresh={refresh} />
-        {!dataReady && (<>Loading data...</>)}
-        {dataReady && (
-          <>
-            <div className="controls">
-              <div className="ico">
-                <button
-                  type="button"
-                  className="show-contents"
-                  onClick={() => setShowContents(true)}
-                  title="Show caption and description"
-                >
-                  <BiBookContent />
-                </button>
-              </div>
-              <FullScreenControl
-                className="ico"
-                customEnterFullScreen={<BsArrowsFullscreen />}
-                customExitFullScreen={<BsFullscreenExit />}
-              />
-              <ZoomControl
-                className="ico"
-                customZoomIn={<BsZoomIn />}
-                customZoomOut={<BsZoomOut />}
-                customZoomCenter={<BiRadioCircleMarked />}
-              />
-              {/* <ModeController className="ico" mod= { mode }/> */}
-              <div className="ico">
-                <button
-                  type="button"
-                  className="Mode"
-                  onClick={() => toggleVisualMode()}
-                  title="Toggle Graph Mode"
-                >
-                  <BiNetworkChart />
-                </button>
-              </div>
-            </div>
-            <div className="contents">
-              <div className="ico">
-                <button
-                  type="button"
-                  className="ico hide-contents"
-                  onClick={() => setShowContents(false)}
-                  title="Show caption and description"
-                >
-                  <GrClose />
-                </button>
-              </div>
-              <GraphTitle filters={filtersState} refresh={refresh} />
-
-              <div className="panels">
-                {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField endpoint={localNodeEndpoint} remoteStatus={remoteStatus} nodeToken={nodeToken} error={remoteError} setNodeToken={setNodeToken} setRemoteEndpoint={setLocalNodeEndpoint} setRemoteStatus={setRemoteStatus} />}
-                <DescriptionPanel mode={mode} />
-                {/*<ClustersPanel
-                  clusters={clusters}
-                  filters={filtersState}
-                  setClusters={(clusters) =>
-                    setFiltersState((filters) => ({
-                      ...filters,
-                      clusters,
-                    }))
-                  }
-                  toggleCluster={(cluster) => {
-                    setFiltersState((filters) => ({
-                      ...filters,
-                      clusters: filters.clusters[cluster]
-                        ? omit(filters.clusters, cluster)
-                        : { ...filters.clusters, [cluster]: true },
-                    }));
-                  }}
+      {!dataReady ? <div className="LoadingScreen">Loading data... <div className="loader" /></div> :
+        <SigmaContainer
+          graphOptions={{ type: "directed" }}
+          initialSettings={{
+            nodeProgramClasses: { image: getNodeProgramImage() },
+            labelRenderer: drawLabel,
+            defaultNodeType: "image",
+            defaultEdgeType: "arrow",
+            renderEdgeLabels: true,
+            labelDensity: 0.07,
+            labelGridCellSize: 60,
+            labelRenderedSizeThreshold: 15,
+            labelFont: "Lato, sans-serif",
+            zIndex: true,
+          }}
+          className="react-sigma"
+        >
+          <GraphSettingsController hoveredNode={hoveredNode} />
+          <GraphEventsController setHoveredNode={setHoveredNode} />
+          <GraphDataController dataset={dataset} filters={filtersState} refresh={refresh} />
+          {dataReady && (
+            <>
+              <div className="controls">
+                <div className="ico">
+                  <button
+                    type="button"
+                    className="show-contents"
+                    onClick={() => setShowContents(true)}
+                    title="Show caption and description"
+                  >
+                    <BiBookContent />
+                  </button>
+                </div>
+                <FullScreenControl
+                  className="ico"
+                  customEnterFullScreen={<BsArrowsFullscreen />}
+                  customExitFullScreen={<BsFullscreenExit />}
                 />
-                <TagsPanel
-                  tags={tags}
-                  filters={filtersState}
-                  setTags={(tags) =>
-                    setFiltersState((filters) => ({
-                      ...filters,
-                      tags,
-                    }))
-                  }
-                  toggleTag={(tag) => {
-                    setFiltersState((filters) => ({
-                      ...filters,
-                      tags: filters.tags[tag] ? omit(filters.tags, tag) : { ...filters.tags, [tag]: true },
-                    }));
-                  }}
-                />*/}
+                <ZoomControl
+                  className="ico"
+                  customZoomIn={<BsZoomIn />}
+                  customZoomOut={<BsZoomOut />}
+                  customZoomCenter={<BiRadioCircleMarked />}
+                />
+
+                <div className="ico">
+                  <button
+                    type="button"
+                    className="Mode"
+                    onClick={() => toggleVisualMode()}
+                    title="Toggle Graph Mode"
+                  >
+                    <BiNetworkChart />
+                  </button>
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </SigmaContainer>
-    </div>
+              <div className="contents">
+                <div className="ico">
+                  <button
+                    type="button"
+                    className="ico hide-contents"
+                    onClick={() => setShowContents(false)}
+                    title="Show caption and description"
+                  >
+                    <GrClose />
+                  </button>
+                </div>
+                <GraphTitle filters={filtersState} refresh={refresh} />
+
+                <div className="panels">
+                  {mode === VisualMode.Subgraph ? <SearchField filters={filtersState} /> : <EndpointField endpoint={localNodeEndpoint} remoteStatus={remoteStatus} nodeToken={nodeToken} error={remoteError} setNodeToken={setNodeToken} setRemoteEndpoint={setLocalNodeEndpoint} setRemoteStatus={setRemoteStatus} />}
+                  <DescriptionPanel mode={mode} />
+
+                </div>
+              </div>
+            </>
+          )}
+        </SigmaContainer>
+      }</div>
   );
 };
 
