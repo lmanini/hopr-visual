@@ -128,31 +128,37 @@ const Root: FC = () => {
   useEffect(() => {
 
     async function loadData() {
-
       const setDatabase = async () => {
         let dataset: Dataset | undefined = {
           nodes: [],
           edges: []
         }
-        switch (mode) {
-          case VisualMode.Localnode:
-            if (remoteStatus === RemoteStatus.selected) {
-              console.log("Starting exploration at ", localNodeEndpoint)
-              try {
-                dataset = await exploreLocalCluster(localNodeEndpoint, nodeToken, setRemoteStatus, setRemoteError)
-              } catch (error: any) {
-                setRemoteError(error)
-                setRemoteStatus(RemoteStatus.errored)
+        try {
+          switch (mode) {
+            case VisualMode.Localnode:
+              if (remoteStatus === RemoteStatus.selected) {
+                console.log("Starting exploration at ", localNodeEndpoint)
+                try {
+                  dataset = await exploreLocalCluster(localNodeEndpoint, nodeToken, setRemoteStatus, setRemoteError)
+                } catch (error: any) {
+                  setRemoteError(error)
+                  setRemoteStatus(RemoteStatus.errored)
+                }
+              } else if (remoteStatus === RemoteStatus.invalid || remoteStatus === RemoteStatus.errored) {
+                setRefresh(!refresh)
               }
-            } else if (remoteStatus === RemoteStatus.invalid || remoteStatus === RemoteStatus.errored) {
-              setRefresh(!refresh)
-            }
-            break;
-          case VisualMode.Subgraph:
-            dataset = await runQuery()
-            break;
-          default:
-            throw new Error("VisualMode not supported")
+              break;
+            case VisualMode.Subgraph:
+              dataset = await runQuery()
+              break;
+            default:
+              throw new Error("VisualMode not supported")
+          }
+        } catch (error) {
+          dataset = {
+            nodes: [],
+            edges: []
+          }
         }
 
         if (dataset == undefined)

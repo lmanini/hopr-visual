@@ -77,6 +77,8 @@ const GraphDataController: FC<{ dataset: Dataset; filters: FiltersState, refresh
     const settings = forceAtlas2.inferSettings(graph);
     forceAtlas2.assign(graph, { settings, iterations: 200 });
 
+    sigma.getCamera().animatedReset()
+
     return () => graph.clear();
   }, [graph, dataset]);
 

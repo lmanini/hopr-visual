@@ -100,7 +100,7 @@ const EndpointField: FC<{ endpoint: string, remoteStatus: RemoteStatus, nodeToke
     <><div className="search-wrapper">
       <input
         type="search"
-        placeholder={"Insert local node endpoint"}
+        placeholder={"1.1.1.1:12345 or my.node.url"}
         list="nodes"
         value={endpoint}
         onChange={onInputNodeChange}
