@@ -15,6 +15,8 @@ For the first, having to deal with thousands of nodes and edges, we decided to l
 
 In `local clusters`, dealing with a much smaller volume, we could tackle the problem directly. In this case, we apply an iterative approach where we ask the user for the `endpoint`  and `token` of one node of the cluster and via [Hopr REST APIs](https://docs.hoprnet.org/developers/rest-api) we make a series of calls to the local node and all the peers connected, trying to find all the announced nodes of the network. Once we have all the nodes, we ask each node for its balance informations and all the outgoing channels. At this point, the only thing remaining is to connect the nodes together and give the dataset to the graph engine to be drawn on the screen.
 
+You can use `?mode=api` to load directly into `local cluster` mode
+
 ## Usage
 Opening the page will show the composition of the Hopr Network, from there you can use the search bar to focus on one particular node or hover a node to show the address and the balances of its channels. By clicking on it, you will open Blockscout on its address.\
 Clicking on the last button on the left, you'll go in local cluster mode, there you'll be able to input a node address (in the format IP:PORT or localhost:PORT or PORT-hoprnet-[..].gitpod.io) and the cluster's token. By then pressing Enter the graph will be drawn on the screen.
