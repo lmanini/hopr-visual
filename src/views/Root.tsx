@@ -2,7 +2,6 @@ import React, { FC, useEffect, useState } from "react";
 import { SigmaContainer, ZoomControl, FullScreenControl } from "react-sigma-v2";
 import { omit, mapValues, keyBy, constant } from "lodash";
 import { ApolloClient, InMemoryCache, gql, useLazyQuery } from '@apollo/client'
-import { useSearchParams } from "react-router-dom";
 
 import getNodeProgramImage from "sigma/rendering/webgl/programs/node.image";
 
