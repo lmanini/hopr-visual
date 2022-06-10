@@ -20,10 +20,12 @@ const DescriptionPanel: FC<{ mode: VisualMode }> = ({ mode }) => {
         The <b>HOPR network</b> is a decentralised and incentivized peer-to-peer network open to anyone who wants to join and run a node.<br />
         Use the control bar on the left to zoom in and out (or the mouse wheel) and to reset the graph to the center.<br /><br />
         Click on the last button <BiNetworkChart /> to switch from the runtime generated network from TheGraph to the Local Cluster Visualizer
-      </p> : <p className="descriptionPanel">You are in the Local Cluster Discovery mode. <br />Fill the above boxes local node IP:Port or Gitpod link and Token of the cluster.<br /><br />
-        Insert the node's Endpoint and Token in the above fields.
-        <br /><br />
-        Click on the last button <BiNetworkChart /> to switch to the runtime generated network.</p>}
+      </p> :
+        <p className="descriptionPanel">
+          You are in the Local Cluster Discovery mode. <br />
+          Insert the node's Endpoint and Token in the above fields.
+          <br /><br />
+          Click on the last button <BiNetworkChart /> to switch to the TheGraph generated network.</p>}
     </Panel>
   );
 };
