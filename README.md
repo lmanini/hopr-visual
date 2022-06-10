@@ -1,6 +1,25 @@
-# Sigma.js full-featured demo
+# React Hopr Visualizer based on Sigma.js
+## Aim of this project
+Provide a visual representation of the Hopr Network and allow developers to easily draw a local cluster
+## Methodology
+We can divide the application in 2 parts, as prescribed by `Sigma.js` documentation:
+- Dataset building
+- Graphical representation of the dataset
 
-This project aims to provide a full-features "real life" application using sigma.js. It was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) and uses [react-sigma-v2](https://github.com/sim51/react-sigma-v2) to interface sigma.js with React.
+The latter is taken care by Sigma.js so we only needed to implement the logic to compute nodes and edges of the network.
+We divided this logic in two sections:
+- `TheGraph` dataset
+- `Local Cluster` dataset
+
+For the first, having to deal with thousands of nodes and edges, we decided to leave all the computation to `TheGraph` which provides us with the computed Hopr Accounts and Channels, properly filtered (we only take nodes that have > 1 edge) and included of all the necessary information (addresses, balances, ...). The implementation of this part can be found on https://github.com/eliaxie/hopr-community.
+
+In `local clusters`, dealing with a much smaller volume, we could tackle the problem directly. In this case, we apply an iterative approach where we ask the user for the `endpoint`  and `token` of one node of the cluster and via [Hopr REST APIs](https://docs.hoprnet.org/developers/rest-api) we make a series of calls to the local node and all the peers connected, trying to find all the announced nodes of the network. Once we have all the nodes, we ask each node for its balance informations and all the outgoing channels. At this point, the only thing remaining is to connect the nodes together and give the dataset to the graph engine to be drawn on the screen.
+
+## Usage
+Opening the page will show the composition of the Hopr Network, from there you can use the search bar to focus on one particular node or hover a node to show the address and the balances of its channels. By clicking on it, you will open Blockscout on its address.\
+Clicking on the last button on the left, you'll go in local cluster mode, there you'll be able to input a node address (in the format IP:PORT or localhost:PORT or PORT-hoprnet-[..].gitpod.io) and the cluster's token. By then pressing Enter the graph will be drawn on the screen.
+### Video Demo: https://www.dropbox.com/s/rfnaum3tppiyg87/Hopr%20Visual.mkv?dl=0
+
 
 ## Available Scripts
 
