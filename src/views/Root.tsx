@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from "react";
 import { SigmaContainer, ZoomControl, FullScreenControl } from "react-sigma-v2";
 import { omit, mapValues, keyBy, constant } from "lodash";
 import { ApolloClient, InMemoryCache, gql, useLazyQuery } from '@apollo/client'
+import { useSearchParams } from "react-router-dom";
 
 import getNodeProgramImage from "sigma/rendering/webgl/programs/node.image";
 
@@ -43,8 +44,14 @@ const Root: FC = () => {
     clusters: {},
     tags: {},
   });
-  const [mode, setMode] = useState<VisualMode>(VisualMode.Subgraph)
-
+  const [mode, setMode] = useState(() => {
+    const queryParams = new URLSearchParams(window.location.search)
+    const paramMode = queryParams.get("mode")
+    if (paramMode != undefined && paramMode == "api") {
+      return VisualMode.Localnode
+    }
+    return VisualMode.Subgraph
+  })
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
@@ -79,6 +86,8 @@ const Root: FC = () => {
     }
   }
 `;
+
+
 
   function toggleVisualMode(): void {
     switch (mode) {
